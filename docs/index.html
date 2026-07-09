@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Manufacturing AI Agents — verified agents for the factory floor</title>
+<meta name="description" content="Verified, memory-backed AI agents for process optimization and production scheduling. Every claim replayed, every schedule reproducible, every risky action human-gated.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E9EDF0;      /* HMI panel gray */
+    --panel:#FFFFFF;
+    --ink:#17222C;        /* dark blue-gray */
+    --steel:#54606C;      /* secondary text */
+    --line:#C3CBD2;       /* hairlines */
+    --blue:#155FA0;       /* engineering blue */
+    --pass:#187A3C;       /* status: verified / pass ONLY */
+    --gate:#B26A00;       /* status: human gate / warning ONLY */
+    --block:#A03024;      /* status: blocked ONLY */
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --disp:'IBM Plex Sans Condensed',var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+  a{color:var(--blue)}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* ---------- title block (engineering drawing header) ---------- */
+  .titleblock{border:1.5px solid var(--ink);background:var(--panel);margin:28px auto 0;display:grid;grid-template-columns:1fr auto;max-width:1080px}
+  .tb-name{padding:14px 18px;border-right:1.5px solid var(--ink)}
+  .tb-name h1{font-family:var(--disp);font-weight:700;font-size:clamp(20px,3.2vw,30px);letter-spacing:.02em;text-transform:uppercase}
+  .tb-name p{font-family:var(--mono);font-size:12px;color:var(--steel);margin-top:2px}
+  .tb-fields{display:grid;grid-template-columns:repeat(3,auto)}
+  .tb-cell{padding:8px 16px;border-left:1px solid var(--line);min-width:110px}
+  .tb-cell:first-child{border-left:0}
+  .tb-cell dt{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--steel);text-transform:uppercase}
+  .tb-cell dd{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:2px}
+  .tb-cell dd .lamp{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--gate);margin-right:6px;vertical-align:baseline}
+
+  /* ---------- hero ---------- */
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:36px;padding:56px 0 48px;align-items:start}
+  .hero h2{font-family:var(--disp);font-weight:700;font-size:clamp(34px,5vw,52px);line-height:1.05;text-transform:uppercase;letter-spacing:.01em}
+  .hero h2 em{font-style:normal;color:var(--blue)}
+  .hero .lede{margin-top:18px;font-size:17px;color:var(--steel);max-width:44ch}
+  .cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{font-family:var(--mono);font-size:14px;font-weight:600;text-decoration:none;padding:11px 20px;border:1.5px solid var(--ink);display:inline-block}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover{background:var(--blue);border-color:var(--blue)}
+  .btn-ghost{color:var(--ink);background:var(--panel)}
+  .btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+
+  /* ---------- signature: audit trace ---------- */
+  .trace{background:var(--panel);border:1.5px solid var(--ink)}
+  .trace-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1.5px solid var(--ink)}
+  .trace-bar span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--steel)}
+  .trace-bar b{font-family:var(--mono);font-size:11px;color:var(--pass)}
+  .trace ol{list-style:none;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.9}
+  .trace li{white-space:pre-wrap;opacity:0;transform:translateY(4px);animation:rise .35s ease forwards}
+  .trace li:nth-child(1){animation-delay:.15s}.trace li:nth-child(2){animation-delay:.5s}
+  .trace li:nth-child(3){animation-delay:.85s}.trace li:nth-child(4){animation-delay:1.2s}
+  .trace li:nth-child(5){animation-delay:1.55s}.trace li:nth-child(6){animation-delay:1.9s}
+  .trace li:nth-child(7){animation-delay:2.25s}.trace li:nth-child(8){animation-delay:2.6s}
+  .trace li:nth-child(9){animation-delay:2.95s}.trace li:nth-child(10){animation-delay:3.3s}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .t-dim{color:var(--steel)}
+  .t-pass{color:var(--pass);font-weight:600}
+  .t-gate{color:var(--gate);font-weight:600}
+  @media (prefers-reduced-motion:reduce){
+    .trace li{animation:none;opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+
+  /* ---------- sections ---------- */
+  section{padding:44px 0}
+  .sec-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);border-top:1.5px solid var(--ink);padding-top:10px;display:block}
+  .sec-title{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3.4vw,34px);text-transform:uppercase;margin-top:8px}
+  .sec-intro{color:var(--steel);max-width:62ch;margin-top:10px}
+
+  /* pipeline */
+  .pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:30px;border:1.5px solid var(--ink);background:var(--panel)}
+  .stage{padding:16px 14px;border-left:1px solid var(--line);position:relative}
+  .stage:first-child{border-left:0}
+  .stage h3{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  .stage h3::before{content:attr(data-k);display:block;font-size:10px;color:var(--steel);margin-bottom:4px}
+  .stage p{font-size:13px;color:var(--steel);margin-top:8px}
+  .stage .verdict{font-family:var(--mono);font-size:11px;font-weight:600;margin-top:10px;display:block}
+  .v-pass{color:var(--pass)}.v-gate{color:var(--gate)}.v-block{color:var(--block)}
+
+  /* properties table */
+  table{width:100%;border-collapse:collapse;margin-top:26px;background:var(--panel);border:1.5px solid var(--ink)}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--steel);border-bottom:1.5px solid var(--ink)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{font-weight:600;width:42%}
+  td:last-child{font-family:var(--mono);font-size:13px;color:var(--steel)}
+
+  /* agents */
+  .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:26px}
+  .card{background:var(--panel);border:1.5px solid var(--ink);padding:20px 18px}
+  .card .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+  .card h3{font-family:var(--disp);font-size:20px;text-transform:uppercase;margin-top:6px}
+  .card p{font-size:14px;color:var(--steel);margin-top:10px}
+  .card .rule{font-family:var(--mono);font-size:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+
+  /* quickstart */
+  pre{background:var(--ink);color:#DEE7EE;font-family:var(--mono);font-size:13px;line-height:1.7;padding:18px 20px;overflow-x:auto;margin-top:22px;border:1.5px solid var(--ink)}
+  pre .c{color:#7E97AB}
+  pre .g{color:#5FBF7F}
+  .onboard{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+
+  /* footer */
+  footer{border-top:1.5px solid var(--ink);margin-top:20px;padding:26px 0 48px}
+  footer .cols{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;color:var(--steel)}
+  footer a{color:var(--ink)}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr}
+    .pipeline{grid-template-columns:1fr}
+    .stage{border-left:0;border-top:1px solid var(--line)}
+    .stage:first-child{border-top:0}
+    .cards{grid-template-columns:1fr}
+    .onboard{grid-template-columns:1fr}
+    .titleblock{grid-template-columns:1fr}
+    .tb-name{border-right:0;border-bottom:1.5px solid var(--ink)}
+    td:first-child{width:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="titleblock" role="banner">
+  <div class="tb-name">
+    <h1>Smart Manufacturing AI&nbsp;Agents</h1>
+    <p>Verified, memory-backed agents for the factory floor</p>
+  </div>
+  <dl class="tb-fields">
+    <div class="tb-cell"><dt>Doc</dt><dd>SMA-0.1.0</dd></div>
+    <div class="tb-cell"><dt>Evals</dt><dd>6 / 6 pass</dd></div>
+    <div class="tb-cell"><dt>Status</dt><dd><span class="lamp" aria-hidden="true"></span>Pre-pilot</dd></div>
+  </dl>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div>
+      <h2>An agent that touches a factory must <em>prove everything</em>.</h2>
+      <p class="lede">Two specialist agents — process optimization and production scheduling — where every claim cites replayable evidence, every schedule is a reproducible solver output, and every risky action waits for a human signature. Nothing unverified leaves the pipeline. Nothing unverified enters memory.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://github.com/ulisesguras/smart-manufacturing-agents">View on GitHub</a>
+        <a class="btn btn-ghost" href="#quickstart">Run the evals</a>
+      </div>
+    </div>
+
+    <figure class="trace" aria-label="Audit trace of one orchestrated run">
+      <div class="trace-bar"><span>audit trace · request drift-alarm-0142</span><b>LIVE REPLAY</b></div>
+      <ol>
+        <li><span class="t-dim">creator ></span> report: EX-02 barrel temp +10.3&nbsp;°C over nominal</li>
+        <li><span class="t-dim">creator ></span> cites stat::EX-02::barrel_temperature::…-0800</li>
+        <li><span class="t-dim">schema  ></span> setpoint 205.0 inside [180, 230] <span class="t-pass">VALID</span></li>
+        <li><span class="t-dim">verify  ></span> replaying citation vs historian… <span class="t-pass">REPRODUCED</span></li>
+        <li><span class="t-dim">verify  ></span> spec envelope vs source of truth… <span class="t-pass">MATCH</span></li>
+        <li><span class="t-dim">verify  ></span> skeptical review, confidence 9/10 <span class="t-pass">APPROVED</span></li>
+        <li><span class="t-dim">gate    ></span> risk HIGH → <span class="t-gate">AWAITING HUMAN SIGNATURE</span></li>
+        <li><span class="t-dim">memory  ></span> episode ep_00027 recorded (verified outcomes only)</li>
+        <li><span class="t-dim">recall  ></span> next incident on EX-02 will see this one first</li>
+        <li>disposition: <span class="t-gate">PENDING_HUMAN_APPROVAL</span> · revisions: 0</li>
+      </ol>
+    </figure>
+  </div>
+
+  <section id="pipeline">
+    <span class="sec-label">Verification pipeline</span>
+    <h2 class="sec-title">Five gates between a model and your machines</h2>
+    <p class="sec-intro">Each gate blocks a specific failure mode. Code gates outrank the model: a generous reviewer cannot approve what deterministic checks refuted.</p>
+    <div class="pipeline">
+      <div class="stage"><h3 data-k="Gate 1">Typed contracts</h3><p>Every output parses against fail-closed Pydantic schemas. Out-of-spec setpoints and understated risk never leave the agent.</p><span class="verdict v-block">BLOCKS: structural hallucination</span></div>
+      <div class="stage"><h3 data-k="Gate 2">Citation replay</h3><p>Each evidence reference encodes its exact query. The verifier re-runs it against the historian and compares.</p><span class="verdict v-block">BLOCKS: invented evidence</span></div>
+      <div class="stage"><h3 data-k="Gate 3">Solver reproduction</h3><p>Schedules carry a solution_id. The verifier re-runs the deterministic solver — match or reject.</p><span class="verdict v-block">BLOCKS: invented schedules</span></div>
+      <div class="stage"><h3 data-k="Gate 4">Human signature</h3><p>High risk, irreversible actions and late schedules force approval. The flag is computed — a model cannot unset it.</p><span class="verdict v-gate">HOLDS: consequential actions</span></div>
+      <div class="stage"><h3 data-k="Gate 5">Memory write gate</h3><p>Only verified outcomes are remembered. Rejected and errored runs never poison future recalls.</p><span class="verdict v-pass">ADMITS: verified history only</span></div>
+    </div>
+  </section>
+
+  <section id="properties">
+    <span class="sec-label">Safety properties</span>
+    <h2 class="sec-title">Enforced, not promised</h2>
+    <table>
+      <thead><tr><th scope="col">Property</th><th scope="col">Enforced by</th></tr></thead>
+      <tbody>
+        <tr><td>Setpoints stay inside spec envelopes</td><td>schema validator + verifier re-check against the real spec sheet</td></tr>
+        <tr><td>No invented citations</td><td>deterministic replay against the plant historian</td></tr>
+        <tr><td>No invented schedules</td><td>solver re-run + solution_id comparison</td></tr>
+        <tr><td>Risky actions gated by humans</td><td>computed approval flag, not model-settable</td></tr>
+        <tr><td>No memory poisoning</td><td>writes only in orchestrator code, verified outcomes only</td></tr>
+        <tr><td>Fail closed</td><td>rejected or errored runs emit no results and no memories</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="agents">
+    <span class="sec-label">System</span>
+    <h2 class="sec-title">Two specialists, one skeptic, one memory</h2>
+    <div class="cards">
+      <article class="card">
+        <span class="tag">Specialist 01</span>
+        <h3>Process optimization</h3>
+        <p>Analyzes telemetry and quality data, diagnoses drift, proposes setpoint changes within spec. Abstains cleanly when data is insufficient — a guessed diagnosis counts as a failure.</p>
+        <p class="rule">Evidence comes only from the historian.</p>
+      </article>
+      <article class="card">
+        <span class="tag">Specialist 02</span>
+        <h3>Production scheduling</h3>
+        <p>Plans the horizon by invoking a deterministic EDD solver, then interprets: late orders, unschedulable orders, line utilization risks. The model interprets; the solver decides.</p>
+        <p class="rule">Schedules come only from the solver.</p>
+      </article>
+      <article class="card">
+        <span class="tag">Memory · Taxanomy</span>
+        <h3>Episodic memory</h3>
+        <p>A durable journal of verified incidents — including the verifier objections earned along the way. Agents recall similar past cases as priors, never as evidence. The plant in month six knows what month one didn't.</p>
+        <p class="rule">Only the orchestrator writes memory.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="quickstart">
+    <span class="sec-label">Quickstart</span>
+    <h2 class="sec-title">Connect a plant with one YAML and two CSVs</h2>
+    <div class="onboard">
+      <div>
+        <p class="sec-intro">Every industrial system — SCADA, historian, MES, ERP, even a supervisor's spreadsheet — can export tabular files. That makes onboarding a data export, not an IT integration project. Native connectors (SQL, OPC&nbsp;UA) plug in behind the same interface when a deployment needs them.</p>
+        <p class="sec-intro" style="margin-top:14px">The offline eval suite needs no API key: solver physics, citation replay, tampered-schedule detection, memory gating and the full orchestration loop are all verified deterministically.</p>
+      </div>
+      <pre><code><span class="c"># install</span>
+python -m venv .venv &amp;&amp; .venv/bin/pip install -e .
+
+<span class="c"># offline eval suite — no API key required</span>
+python eval_verifier.py      <span class="g">EVAL PASSED</span>
+python eval_orchestrator.py  <span class="g">EVAL PASSED</span>
+python eval_memory.py        <span class="g">EVAL PASSED</span>
+python eval_scheduling.py    <span class="g">EVAL PASSED</span>
+
+<span class="c"># live pipeline against the demo plant</span>
+export ANTHROPIC_API_KEY=sk-ant-…
+python orchestrator.py</code></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap cols">
+    <span>© 2026 · Apache License 2.0</span>
+    <span><a href="https://github.com/ulisesguras/smart-manufacturing-agents">smart-manufacturing-agents</a> · built on <a href="https://github.com/ulisesguras/remembrance">Taxanomy</a>, PydanticAI &amp; MCP</span>
+    <span>Status: pre-pilot · seeking first shadow-mode deployment</span>
+  </div>
+</footer>
+
+</body>
+</html>

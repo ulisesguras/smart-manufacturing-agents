@@ -1,0 +1,26 @@
+plant_name: "Planta Ejemplo SA"
+lines:
+  - line_id: LINE-A
+    machines:
+      - machine_id: EX-01
+        description: "Extrusora — sección de alimentación"
+        telemetry: true
+        parameters:
+          - {name: screw_speed, unit: rpm, min_allowed: 40, nominal: 75, max_allowed: 110}
+          - {name: feed_rate, unit: kg_per_hour, min_allowed: 80, nominal: 120, max_allowed: 160}
+      - machine_id: EX-02
+        description: "Extrusora — barril y matriz"
+        telemetry: true
+        parameters:
+          - {name: barrel_temperature, unit: celsius, min_allowed: 180, nominal: 205, max_allowed: 230}
+          - {name: die_pressure, unit: bar, min_allowed: 90, nominal: 140, max_allowed: 190}
+  - line_id: LINE-B
+    machines:
+      - machine_id: MX-01
+        description: "Mezclador — línea nueva, telemetría pendiente"
+        telemetry: false
+        parameters:
+          - {name: agitator_speed, unit: rpm, min_allowed: 15, nominal: 45, max_allowed: 90}
+data:
+  telemetry_csv: telemetry.csv
+  quality_csv: quality.csv
