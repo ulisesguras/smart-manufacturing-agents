@@ -18,6 +18,9 @@ Offline checks:
   5. AGENT PLUMBING   the agent runs end-to-end with TestModel over the
                       real MCP toolset and the schema forces the human
                       gate on a late plan.
+  6. GHOST PINNED LINE  an in_progress order pinned to a line absent from
+                      capacities lands in unscheduled with a clear reason;
+                      the solver never crashes or silently assigns it.
 """
 
 from __future__ import annotations
@@ -32,6 +35,8 @@ from scheduling_agent import (
     scheduling_prechecks,
 )
 from scheduling_schemas import (
+    OrderStatus,
+    ProductionOrder,
     ScheduleMetrics,
     ScheduleReport,
     SchedulingRequest,
@@ -193,6 +198,47 @@ def main() -> int:
         failures.append("5: human gate not forced through the live loop")
     print("5) plumbing del agente -> tools:", tools_called,
           "| gate humano en loop real:", report.requires_human_approval)
+
+    # 6. Pinned order on a line absent from capacities ---------------------------
+    # Regression guard: a pinned_line typo/decommissioned line must not crash
+    # the solver (KeyError on rates[line_id]) and must not silently assign the
+    # order — it belongs in unscheduled with a reason naming the bad line.
+    ghost_order = ProductionOrder(
+        order_id="O-GHOST",
+        product="A",
+        quantity_units=100,
+        due_in_hours=5,
+        status=OrderStatus.IN_PROGRESS,
+        pinned_line="L-GHOST",
+    )
+    original_demo_orders = sched.DEMO_ORDERS
+    sched.DEMO_ORDERS = [*original_demo_orders, ghost_order]
+    ghost_run = None
+    ghost_crashed = False
+    try:
+        ghost_run = sched.solve_schedule("edd")
+    except Exception as exc:
+        ghost_crashed = True
+        failures.append(f"6: solver crashed on unknown pinned line: {exc!r}")
+    finally:
+        sched.DEMO_ORDERS = original_demo_orders
+
+    if not ghost_crashed:
+        ghost_assigned = any(a["order_id"] == "O-GHOST" for a in ghost_run["assignments"])
+        ghost_reason = next(
+            (u["reason"] for u in ghost_run["unscheduled"] if u["order_id"] == "O-GHOST"),
+            None,
+        )
+        if ghost_assigned:
+            # Negative assertion: must never be silently assigned to a real line.
+            failures.append("6: order pinned to an unknown line was assigned anyway")
+        if ghost_reason is None:
+            failures.append("6: order pinned to an unknown line was not sent to unscheduled")
+        elif "L-GHOST" not in ghost_reason:
+            # Positive assertion: the reason must name the missing line, not be generic.
+            failures.append(f"6: unscheduled reason does not name the missing line: {ghost_reason!r}")
+    print("6) orden pinneada a línea inexistente -> sin crash:", not ghost_crashed,
+          "| motivo:", ghost_reason if not ghost_crashed else "N/A")
 
     if failures:
         print("\nEVAL FAILED:")

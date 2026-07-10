@@ -58,7 +58,9 @@ Rules go top to bottom: what breaks production first, preferences last.
 
 Paths below are POSIX (`.venv/bin/...`). On native Windows (PowerShell),
 use `.venv\Scripts\python.exe` / `.venv\Scripts\pip.exe` instead; Git Bash
-on Windows still uses the POSIX form shown here.
+on Windows still uses the POSIX form shown here. On Windows consoles, also
+set `PYTHONIOENCODING=utf-8` before running the eval suite — the scripts
+print `✓` characters that the default cp1252 encoding cannot handle.
 
 ```bash
 # environment
