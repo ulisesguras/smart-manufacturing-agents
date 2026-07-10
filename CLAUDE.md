@@ -71,6 +71,7 @@ python -m venv .venv && .venv/bin/pip install -e .
 .venv/bin/python eval_orchestrator.py
 .venv/bin/python eval_memory.py
 .venv/bin/python eval_scheduling.py
+.venv/bin/python eval_supply.py
 
 # live evals (require ANTHROPIC_API_KEY)
 .venv/bin/python eval_ex02.py          # drift detection
@@ -79,6 +80,7 @@ python -m venv .venv && .venv/bin/pip install -e .
 # full pipelines (require ANTHROPIC_API_KEY)
 .venv/bin/python orchestrator.py       # creator -> verifier -> revisions
 .venv/bin/python scheduling_agent.py   # scheduling run + prechecks
+.venv/bin/python supply_agent.py       # supply-chain run + prechecks
 
 # demo plant with fresh timestamps
 .venv/bin/python make_sample_plant.py
@@ -92,12 +94,19 @@ HISTORIAN_BACKEND=csv PLANT_CONFIG=example_plant/plant_config.yaml \
 request -> orchestrator -> creator agent (PydanticAI, output_type gated)
               |                 |-- MCP: historian (demo|csv) [read-only]
               |                 |-- MCP: episodic memory      [read-only]
-              |                 '-- MCP: scheduling solver    [read-only]
+              |                 |-- MCP: scheduling solver    [read-only]
+              |                 '-- MCP: supply-chain coverage [read-only]
               |-> verifier = deterministic prechecks + skeptical LLM
               |       (code blockers override the model)
               |-> revision loop (clean context, max 2) -> fail closed
               '-> finalize(): gated episodic write (Taxanomy journal)
 ```
+
+Third specialist: `supply_agent.py` answers "does the plan have the
+materials?" via `supply_mcp_server.py`'s `assess_coverage` (deterministic
+coverage math, demand seamed from `scheduling_mcp_server.DEMO_ORDERS` x
+BOM) — same solver-computes/LLM-interprets split as scheduling, cited by
+`assessment_id` instead of `solution_id`.
 
 Dispositions: approved | pending_human_approval | abstained | rejected |
 verification_failed. The last two never reach memory.
