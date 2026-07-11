@@ -24,6 +24,11 @@ supplier.
 2. NEVER invent suppliers, purchase orders, inventory positions, or
    requirements. Every `evidence_ref` must be an id returned by a tool in
    this session — no exceptions, no "reasonable" guesses.
+   `evidence_refs` MUST use prefixed handles exactly as returned or
+   composed by the tools — never a bare id: `gap::<id>` verbatim from
+   `assess_coverage`, `po::<po_id>`, `supplier::<supplier_id>`,
+   `inv::<material>`, `req::<material>`. A bare id like `PO-2001` is
+   invalid and will be rejected by prechecks.
 3. Any mitigation that costs money (`expedite_po`, `reorder`,
    `alternate_supplier`) is a recommendation, never an action. The schema
    forces `requires_human_approval=true` when you propose one — do not work

@@ -104,6 +104,13 @@ class DemoBackend:
         },
     }
 
+    def __init__(self) -> None:
+        # Freezes wall-clock-dependent values (drift/recency) per query key,
+        # so a verifier replaying the same window later sees identical
+        # numbers instead of a value that crept between the two reads.
+        self._sensor_stats_cache: dict[tuple[str, str, str, str], SensorStat] = {}
+        self._quality_metrics_cache: dict[tuple[str, str, str], list[QualityMetric]] = {}
+
     @staticmethod
     def _seed(*parts: str) -> float:
         digest = hashlib.sha256("|".join(parts).encode()).hexdigest()
@@ -144,6 +151,16 @@ class DemoBackend:
         for param in selected:
             if param not in params:
                 continue
+            cache_key = (
+                machine_id,
+                param,
+                window.start.isoformat(),
+                window.end.isoformat(),
+            )
+            cached = self._sensor_stats_cache.get(cache_key)
+            if cached is not None:
+                stats.append(cached)
+                continue
             unit, lo, nom, hi = params[param]
             noise = self._seed(machine_id, param, window.start.isoformat())
             # Deliberate drift on EX-02 barrel temperature: mean creeps up
@@ -160,31 +177,35 @@ class DemoBackend:
                 spread = (hi - lo) * (0.02 + 0.05 * recency)
             mean = min(hi, nom + drift + (noise - 0.5) * spread)
             std = spread * (0.8 + 0.4 * noise)
-            stats.append(
-                SensorStat(
-                    stat_id=(
-                        f"stat::{machine_id}::{param}::"
-                        f"{window.start:%Y%m%dT%H%M}-{window.end:%Y%m%dT%H%M}"
-                    ),
-                    machine_id=machine_id,
-                    parameter=param,
-                    unit=unit,
-                    mean=round(mean, 2),
-                    std=round(std, 3),
-                    minimum=round(mean - 2 * std, 2),
-                    maximum=round(min(hi + 2.0, mean + 2 * std), 2),
-                    sample_count=int(
-                        (window.end - window.start).total_seconds() // 10
-                    )
-                    or 1,
-                    window=window,
+            stat = SensorStat(
+                stat_id=(
+                    f"stat::{machine_id}::{param}::"
+                    f"{window.start:%Y%m%dT%H%M}-{window.end:%Y%m%dT%H%M}"
+                ),
+                machine_id=machine_id,
+                parameter=param,
+                unit=unit,
+                mean=round(mean, 2),
+                std=round(std, 3),
+                minimum=round(mean - 2 * std, 2),
+                maximum=round(min(hi + 2.0, mean + 2 * std), 2),
+                sample_count=int(
+                    (window.end - window.start).total_seconds() // 10
                 )
+                or 1,
+                window=window,
             )
+            self._sensor_stats_cache[cache_key] = stat
+            stats.append(stat)
         return stats
 
     def quality_metrics(self, line_id: str, window: AnalysisWindow) -> list[QualityMetric]:
         if line_id != self.LINE:
             return []
+        cache_key = (line_id, window.start.isoformat(), window.end.isoformat())
+        cached = self._quality_metrics_cache.get(cache_key)
+        if cached is not None:
+            return cached
         noise = self._seed(line_id, "defect_rate", window.start.isoformat())
         hours_ago = max(
             0.0, (datetime.now(timezone.utc) - window.end).total_seconds() / 3600
@@ -192,7 +213,7 @@ class DemoBackend:
         recency = math.exp(-hours_ago / 24)
         defect = 1.2 + 2.5 * recency + noise * 0.4  # rises with the drift
         wid = f"{window.start:%Y%m%dT%H%M}-{window.end:%Y%m%dT%H%M}"
-        return [
+        metrics = [
             QualityMetric(
                 metric_id=f"metric::{line_id}::defect_rate::{wid}",
                 line_id=line_id,
@@ -210,6 +231,8 @@ class DemoBackend:
                 window=window,
             ),
         ]
+        self._quality_metrics_cache[cache_key] = metrics
+        return metrics
 
 
 def make_backend() -> HistorianBackend:

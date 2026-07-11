@@ -195,6 +195,25 @@ def main() -> int:
         f"| issues: {len(merged_roundtrip.issues)} | score: {merged.confidence_score}",
     )
 
+    # E. Regression: memoized DemoBackend stats must not drift between two
+    # reads of the same window, even seconds apart (creator reads once,
+    # verifier replays later — they must see identical numbers).
+    import historian_mcp_server as historian
+
+    start, end = _window()
+    first_stats = historian.get_sensor_stats("EX-02", start, end, "barrel_temperature")["stats"]
+    second_stats = historian.get_sensor_stats("EX-02", start, end, "barrel_temperature")["stats"]
+    first_metrics = historian.get_quality_metrics("LINE-A", start, end)["metrics"]
+    second_metrics = historian.get_quality_metrics("LINE-A", start, end)["metrics"]
+    if first_stats != second_stats:
+        failures.append(f"E: sensor_stats drifted across reads: {first_stats} vs {second_stats}")
+    if first_metrics != second_metrics:
+        failures.append(f"E: quality_metrics drifted across reads: {first_metrics} vs {second_metrics}")
+    print(
+        "E) lecturas repetidas de la misma ventana -> estable:",
+        first_stats == second_stats and first_metrics == second_metrics,
+    )
+
     if failures:
         print("\nEVAL FAILED:")
         for f in failures:
